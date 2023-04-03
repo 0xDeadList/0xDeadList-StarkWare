@@ -1,5 +1,4 @@
 %lang starknet
-from starkware.cairo.common.bool import FALSE, TRUE
 from starkware.cairo.common.cairo_builtins import EcOpBuiltin, HashBuiltin
 from starkware.cairo.common.ec import StarkCurve, ec_mul
 from starkware.cairo.common.ec_point import EcPoint
@@ -35,13 +34,13 @@ func publish_private_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     private_key: felt
 ) {
     alloc_locals;
-    let (leaker) = private_key2leaker.read(private_key);
-    let (p: EcPoint) = ec_mul(m=private_key, p=EcPoint(x=StarkCurve.GEN_X, y=StarkCurve.GEN_Y));
-    let public_key = p.x;
-
     with_attr error_message("Private key has been reported. Key: {private_key}.") {
+        let (leaker) = private_key2leaker.read(private_key);
         assert leaker = 0;
     }
+
+    let (p: EcPoint) = ec_mul(m=private_key, p=EcPoint(x=StarkCurve.GEN_X, y=StarkCurve.GEN_Y));
+    let public_key = p.x;
     let (caller_address) = get_caller_address();
     private_key2leaker.write(private_key, caller_address);
     public_key2leaker.write(public_key, caller_address);
@@ -148,6 +147,3 @@ func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_chec
     ERC721.safe_transfer_from(_from, to, token_id, data_len, data);
     return ();
 }
-
-// @constructor
-// upgrader
