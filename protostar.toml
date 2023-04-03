@@ -5,5 +5,3 @@ cairo-path = ["lib/cairo_contracts/src"]
 
 [contracts]
 main = ["src/main.cairo"]
-
-starknet = ["src/contract.cairo"]

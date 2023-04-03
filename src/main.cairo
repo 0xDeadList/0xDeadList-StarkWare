@@ -1,60 +1,11 @@
 %lang starknet
-from starkware.cairo.common.cairo_builtins import EcOpBuiltin, HashBuiltin
+from starkware.cairo.common.cairo_builtins import HashBuiltin, EcOpBuiltin
 from starkware.cairo.common.ec import StarkCurve, ec_mul
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.starknet.common.syscalls import get_caller_address
 from openzeppelin.token.erc721.library import ERC721
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.math import split_felt, assert_lt
-
-@storage_var
-func private_key2leaker(private_key: felt) -> (leaker: felt) {
-}
-
-@storage_var
-func public_key2leaker(public_key: felt) -> (leaker: felt) {
-}
-
-@event
-func private_key_leaked(private_key: felt, public_key: felt, leaker: felt) {
-}
-
-func _felt_to_uint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    num: felt
-) -> (res: Uint256) {
-    let (high, low) = split_felt(num);
-    tempvar res: Uint256;
-    res.high = high;
-    res.low = low;
-    return (res=res);
-}
-
-@external
-func publish_private_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, ec_op_ptr: EcOpBuiltin*}(
-    private_key: felt
-) {
-    alloc_locals;
-    with_attr error_message("Private key range invalid. Key: {private_key}.") {
-        assert_lt(0, private_key);
-    }
-
-    with_attr error_message("Private key has been reported. Key: {private_key}.") {
-        let (leaker) = private_key2leaker.read(private_key);
-        assert leaker = 0;
-    }
-
-    let (p: EcPoint) = ec_mul(m=private_key, p=EcPoint(x=StarkCurve.GEN_X, y=StarkCurve.GEN_Y));
-    let public_key = p.x;
-    let (caller_address) = get_caller_address();
-    private_key2leaker.write(private_key, caller_address);
-    public_key2leaker.write(public_key, caller_address);
-
-    private_key_leaked.emit(private_key=private_key, public_key=public_key, leaker=caller_address);
-    let (token_id) = _felt_to_uint(public_key);
-    assert public_key = token_id.high * (2 ** 128) + token_id.low;
-    ERC721._mint(caller_address, token_id);
-    return ();
-}
+from starkware.cairo.common.math import split_felt, assert_not_zero
 
 //
 // Constructor
@@ -72,6 +23,15 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 //
 // Getters
 //
+
+@view
+func isPrivateKeyLeaked{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    public_key: felt
+)-> (is_leaked: felt) {
+    let (token_id) = _feltToUint256(public_key);
+    let is_leaked = ERC721._exists(token_id);
+    return (is_leaked,);
+}
 
 @view
 func name{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (name: felt) {
@@ -122,6 +82,22 @@ func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 //
 
 @external
+func publishPrivateKey{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, ec_op_ptr: EcOpBuiltin*}(
+    private_key: felt
+) {
+    alloc_locals;
+    with_attr error_message("Private key range invalid. Key: {private_key}.") {
+        assert_not_zero(private_key);
+    }
+    let (caller_address) = get_caller_address();
+    let (p: EcPoint) = ec_mul(m=private_key, p=EcPoint(x=StarkCurve.GEN_X, y=StarkCurve.GEN_Y));
+    PrivateKeyLeaked.emit(private_key=private_key, public_key=p.x, reporter_address=caller_address);
+    let (token_id) = _feltToUint256(p.x);
+    ERC721._mint(caller_address, token_id);
+    return ();
+}
+
+@external
 func approve{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
     to: felt, token_id: Uint256
 ) {
@@ -151,4 +127,26 @@ func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_chec
 ) {
     ERC721.safe_transfer_from(_from, to, token_id, data_len, data);
     return ();
+}
+
+//
+// Events
+//
+
+@event
+func PrivateKeyLeaked(private_key: felt, public_key: felt, reporter_address: felt) {
+}
+
+//
+// Internals
+//
+
+func _feltToUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    num: felt
+) -> (res: Uint256) {
+    let (high, low) = split_felt(num);
+    tempvar res: Uint256;
+    res.high = high;
+    res.low = low;
+    return (res,);
 }
