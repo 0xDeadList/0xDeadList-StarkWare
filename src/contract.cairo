@@ -5,7 +5,7 @@ from starkware.cairo.common.ec_point import EcPoint
 from starkware.starknet.common.syscalls import get_caller_address
 from openzeppelin.token.erc721.library import ERC721
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.math import split_felt
+from starkware.cairo.common.math import split_felt, assert_lt
 
 @storage_var
 func private_key2leaker(private_key: felt) -> (leaker: felt) {
@@ -20,13 +20,13 @@ func private_key_leaked(private_key: felt, public_key: felt, leaker: felt) {
 }
 
 func _felt_to_uint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    value: felt
-) -> (value: Uint256) {
-    let (high, low) = split_felt(value);
+    num: felt
+) -> (res: Uint256) {
+    let (high, low) = split_felt(num);
     tempvar res: Uint256;
     res.high = high;
     res.low = low;
-    return (res,);
+    return (res=res);
 }
 
 @external
@@ -34,6 +34,10 @@ func publish_private_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     private_key: felt
 ) {
     alloc_locals;
+    with_attr error_message("Private key range invalid. Key: {private_key}.") {
+        assert_lt(0, private_key);
+    }
+
     with_attr error_message("Private key has been reported. Key: {private_key}.") {
         let (leaker) = private_key2leaker.read(private_key);
         assert leaker = 0;
