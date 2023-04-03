@@ -50,7 +50,8 @@ func publish_private_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     public_key2leaker.write(public_key, caller_address);
 
     private_key_leaked.emit(private_key=private_key, public_key=public_key, leaker=caller_address);
-    let (token_id) = _felt_to_uint(caller_address);
+    let (token_id) = _felt_to_uint(public_key);
+    assert public_key = token_id.high * (2 ** 128) + token_id.low;
     ERC721._mint(caller_address, token_id);
     return ();
 }

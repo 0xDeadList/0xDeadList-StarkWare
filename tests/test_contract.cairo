@@ -43,7 +43,7 @@ func test_private_key_range_check_negative{syscall_ptr: felt*, range_check_ptr, 
 @external
 func test_transfer_event_emit{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: HashBuiltin*, ec_op_ptr: EcOpBuiltin*}() {
     %{ stop_prank_callable = start_prank(456) %}
-    %{ expect_events({"name": "Transfer", "data": [0, 456, 456, 0]}) %} // data: [from , to, token_id_low, token_id_high]
+    %{ expect_events({"name": "Transfer", "data": [0, 456, 6387972689534309687154833283135443772, 4785580741027936964496764433346626005]}) %} // data: [from , to, pk_low, pk_high]
     publish_private_key(12345);
     %{ stop_prank_callable() %}
     return ();
