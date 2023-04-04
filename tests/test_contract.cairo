@@ -1,7 +1,8 @@
 %lang starknet
-from src.main import publishPrivateKey, isPrivateKeyLeaked, transferFrom
+from src.main import publishPrivateKey, isPrivateKeyLeaked, transferFrom, safeTransferFrom
 from starkware.cairo.common.cairo_builtins import HashBuiltin, EcOpBuiltin
 from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.alloc import alloc
 
 @external
 func test_repetition{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: HashBuiltin*, ec_op_ptr: EcOpBuiltin*}() {
@@ -89,5 +90,18 @@ func test_transfer_to_zero_address{syscall_ptr: felt*, range_check_ptr, pedersen
     publishPrivateKey(12345);
     %{ expect_revert("TRANSACTION_FAILED", "ERC721: cannot transfer to the zero address") %}
     transferFrom(456, 0, Uint256(6387972689534309687154833283135443772, 4785580741027936964496764433346626005));
+    %{ stop_prank_callable() %}
+    return ();
+}
+
+@external
+func test_safe_transfer_to_zero_address{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: HashBuiltin*, ec_op_ptr: EcOpBuiltin*}() {
+    alloc_locals;
+    %{ stop_prank_callable = start_prank(456) %}
+    publishPrivateKey(12345);
+    %{ expect_revert("TRANSACTION_FAILED", "ERC721: cannot transfer to the zero address") %}
+    let (ptr) = alloc();
+    safeTransferFrom(456, 0, Uint256(6387972689534309687154833283135443772, 4785580741027936964496764433346626005), 0, ptr);
+    %{ stop_prank_callable() %}
     return ();
 }
