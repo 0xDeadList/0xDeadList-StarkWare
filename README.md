@@ -4,7 +4,7 @@
 
 ### Project description
 
-0xDeadList project maintains a leaked address list for the public good.
+0xDeadList project maintains a leaked address list for the public good, rewarding Burier NFTs to reporters.
 
 0xDeadList collects the "dead" addresses whose leaked private keys are leaked (known by others). Users are able to bury wallets and get Burier NFTs for reporting leaked private keys that they own or they know. DApps are able to block those publicly accessible wallets with on/off-chain APIs.
 
