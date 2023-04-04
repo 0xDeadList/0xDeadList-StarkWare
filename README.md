@@ -45,10 +45,9 @@ https://twitter.com/0xDeadList
 
 ### Deployed Contracts:
 
-Starknet Goerli Testnet: https://testnet.starkscan.co/contract/0x04740c802bd5a3338a1ed016d04f2008adb2f2c2bf11b450db08ef5493c68391
+Starknet Goerli Testnet: https://testnet.starkscan.co/contract/0x017e3fe74b06ed2447c56d171339dbeab98507c1acff10bc7458cedd4d0c3b11
 
-Starknet Mainnet:
-
+Starknet Mainnet: https://starkscan.co/contract/0x054c35e462a3d64e7567fa2fb717949da12260b936e2effa95aef1d9a58be737
 
 ### TODO
 
